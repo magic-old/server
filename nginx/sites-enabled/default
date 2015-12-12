@@ -1,0 +1,15 @@
+server {
+  listen 80;
+  listen [::]:80;
+  server_name HOSTNAME;
+  root /www/data;
+  index index.html;
+
+  location / {
+    try_files /HOSTNAME$uri =404;
+  }
+  location = / {
+    try_files /HOSTNAME/index.html =404;
+  }
+  error_page 404 /HOSTNAME/index.html;
+}

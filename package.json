@@ -1,0 +1,45 @@
+{
+  "name": "MagicServer",
+  "version": "0.0.1",
+  "description": "Magically serves static webpages",
+  "private": true,
+  "author": "Wizards@Work",
+  "license": "AGPL-3.0",
+  "contributors": [
+    {
+      "name": "jascha ehrenreich",
+      "email": "jascha@magicshifter.net",
+      "github": "jaeh"
+    },
+    {
+      "name": "philipp tiefenbacher",
+      "email": "wizard23@magicshifter.net",
+      "github": "wizard23"
+    },
+    {
+      "name": "tom peak",
+      "github": "tompeak"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/magic/server"
+  },
+  "keywords": [
+    "magicshifter",
+    "metalab",
+    "static",
+    "pages",
+    "server"
+  ],
+  "bugs": {
+    "url": "https://github.com/magic/server/issues"
+  },
+  "dependencies": {
+    "babelify": "^7.2.0",
+    "browserify": "^12.0.1",
+    "jade": "^1.11.0",
+    "nib": "^1.1.0",
+    "stylus": "^0.52.4"
+  }
+}
