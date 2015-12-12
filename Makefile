@@ -86,5 +86,10 @@ rmImages:
 # main docker task, builds deps then runs the container
 docker: build docker-build docker-run
 
+watch:
+	while inotifywait -r \
+		-e close_write ./*; do make build; \
+	done;
+
 # server is the default task
 all: server
