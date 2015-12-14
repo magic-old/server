@@ -34,7 +34,10 @@ build:
 		if [ -d ./hosts/$$host_dir/css ]; then \
 			echo "build stylus css" && \
 			mkdir ./out/hosts/$$host_dir/css -p && \
-			${NODE_BIN}stylus ./hosts/$$host_dir/css/main.styl --out ./out/hosts/$$host_dir/css/; \
+			${NODE_BIN}stylus \
+				./hosts/$$host_dir/css/main.styl \
+				--out ./out/hosts/$$host_dir/css/ \
+				--use nib; \
 		fi && \
 		\
 		if [ -d ./hosts/$$host_dir/js ]; then \
