@@ -11,8 +11,10 @@ clean:
 # install npm dependencies
 install:
 	npm install;
-	git clone git@github.com:jaeh/jaeh.at ${HOSTS_DIR}jaeh.at || echo "host jaeh.at already exists";
-	git clone git@github.com:wizardsatwork/wizardsat.work ${HOSTS_DIR}wizardsat.work || echo "host wizardsat.work already exists";
+	host=wizardsat.work
+	#git clone git@github.com:wizardsatwork/$$host \
+	#	${HOSTS_DIR}$$host \
+	# || echo "host $$host already exists";
 	@echo "Install finished"
 
 uninstall: clean
@@ -33,25 +35,31 @@ build-javascript: build-create-host-dirs
 		if [ -d $$js_dir/ ]; then \
 			for js_lib in $$(ls $$js_dir/); do \
 				lib_dir=$$js_dir/$$js_lib; \
+				out_dir=${HOSTS_OUT_DIR}$$host_dir/js; \
+				echo "out_dir $$out_dir"; \
 				if [ -d $$lib_dir ]; then \
-					if [ -f $$lib_dir/index.js ]; then \
-						out_dir=${HOSTS_OUT_DIR}$$host_dir/js/; \
-						mkdir -p ${HOSTS_OUT_DIR}$$host_dir/js/; \
-						echo "build javascript lib ${HOSTS_OUT_DIR}$$host_dir/js/$$js_lib.js"; \
+					echo "lib_dir $$lib_dir"; \
+					lib_file=$$lib_dir/index.js; \
+					echo "lib_file $$lib_file"; \
+					if [ -f $$lib_file ]; then \
+						mkdir -p $$out_dir; \
+						out_file=$$out_dir/$$js_lib.js; \
+						echo "build javascript lib $$out_file"; \
 						${NODE_BIN}browserify \
-							${HOSTS_DIR}$$host_dir/js/$$js_lib/index.js \
-							-o ${HOSTS_OUT_DIR}$$host_dir/js/$$js_lib.js \
+							$$lib_file \
+							-o $$out_file \
 							-t [ babelify --presets [ es2015 ] ] \
 						; \
 					else \
-						for js_sub_lib in $$(ls ${HOSTS_DIR}$$host_dir/js/$$js_lib/); do \
-							if [ -d ${HOSTS_DIR}$$host_dir/js/$$js_lib ]; then \
-								if [ -f ${HOSTS_DIR}$$host_dir/js/$$js_lib/$$js_sub_lib/index.js ]; then \
-									mkdir -p ${HOSTS_OUT_DIR}$$host_dir/js/$$js_lib/; \
-									echo "build javascript lib ${HOSTS_OUT_DIR}$$host_dir/js/$$js_lib/$$js_sub_lib.js"; \
+						for js_sub_lib in $$(ls $$lib_dir); do \
+							if [ -d $$lib_dir ]; then \
+								sub_lib_dir=$$lib_dir/$$js_sub_lib; \
+								if [ -f $$js_sub_dir/index.js ]; then \
+									mkdir -p $$lib_dir; \
+									echo "build javascript lib $$sub_lib_dir.js"; \
 									${NODE_BIN}browserify \
-										${HOSTS_DIR}$$host_dir/js/$$js_lib/$$js_sub_lib/index.js \
-										-o ${HOSTS_OUT_DIR}$$host_dir/js/$$js_lib/$$js_sub_lib.js \
+										$$sub_lib-dir/index.js \
+										-o $$sub_lib_dir.js \
 										-t [ babelify --presets [ es2015 ] ] \
 									; \
 								fi; \
