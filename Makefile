@@ -22,28 +22,23 @@ uninstall: clean
 
 build-create-host-dirs:
 	@for host_dir in $$(ls ${HOSTS_DIR}); do \
-		dir=${HOSTS_DIR}$$host_dir; \
+		dir=${HOSTS_OUT_DIR}$$host_dir; \
 		echo "creating directory $$dir"; \
-		if [ -d $$dir ]; then \
-			mkdir $$dir -p; \
-		fi; \
+		mkdir $$dir -p; \
 	done;
 
 build-javascript: build-create-host-dirs
 	@for host_dir in $$(ls ${HOSTS_DIR}); do \
-		js_dir=${HOSTS_DIR}$$host_dir/js; \
-		if [ -d $$js_dir/ ]; then \
-			for js_lib in $$(ls $$js_dir/); do \
-				lib_dir=$$js_dir/$$js_lib; \
+		dir=${HOSTS_DIR}$$host_dir/js; \
+		if [ -d $$dir/ ]; then \
+			for lib in $$(ls $$dir/); do \
+				lib_dir=$$dir/$$lib; \
 				out_dir=${HOSTS_OUT_DIR}$$host_dir/js; \
-				echo "out_dir $$out_dir"; \
 				if [ -d $$lib_dir ]; then \
-					echo "lib_dir $$lib_dir"; \
 					lib_file=$$lib_dir/index.js; \
-					echo "lib_file $$lib_file"; \
 					if [ -f $$lib_file ]; then \
 						mkdir -p $$out_dir; \
-						out_file=$$out_dir/$$js_lib.js; \
+						out_file=$$out_dir/$$lib.js; \
 						echo "build javascript lib $$out_file"; \
 						${NODE_BIN}browserify \
 							$$lib_file \
@@ -51,15 +46,17 @@ build-javascript: build-create-host-dirs
 							-t [ babelify --presets [ es2015 ] ] \
 						; \
 					else \
-						for js_sub_lib in $$(ls $$lib_dir); do \
+						for sub_lib in $$(ls $$lib_dir); do \
 							if [ -d $$lib_dir ]; then \
-								sub_lib_dir=$$lib_dir/$$js_sub_lib; \
-								if [ -f $$js_sub_dir/index.js ]; then \
-									mkdir -p $$lib_dir; \
-									echo "build javascript lib $$sub_lib_dir.js"; \
+								sub_lib_dir=$$lib_dir/$$sub_lib; \
+								if [ -f $$sub_lib_dir/index.js ]; then \
+									lib_out_dir=$$out_dir/$$lib/$$sub_lib; \
+									mkdir -p $$out_dir/$$lib; \
+									echo "make dir $$out_dir/$$lib"; \
+									echo "build javascript lib $$sub_lib_dir.js to $$lib_out_dir.js"; \
 									${NODE_BIN}browserify \
-										$$sub_lib-dir/index.js \
-										-o $$sub_lib_dir.js \
+										$$sub_lib_dir/index.js \
+										-o $$lib_out_dir.js \
 										-t [ babelify --presets [ es2015 ] ] \
 									; \
 								fi; \
@@ -76,26 +73,29 @@ build-javascript: build-create-host-dirs
 
 watch-js: build-create-host-dirs
 	@for host_dir in $$(ls ${HOSTS_DIR}); do \
-		if [ -d ${HOSTS_DIR}$$host_dir/js/ ]; then \
-			for js_lib in $$(ls ${HOSTS_DIR}$$host_dir/js); do \
-				if [ -d ${HOSTS_DIR}$$host_dir/js/$$js_lib ]; then \
-					if [ -f ${HOSTS_DIR}$$host_dir/js/$$js_lib/index.js ]; then \
-						mkdir -p ${HOSTS_OUT_DIR}$$host_dir/js/; \
-						echo "watch javascript lib ${HOSTS_OUT_DIR}$$host_dir/js/$$js_lib.js"; \
+		js_dir=${HOSTS_DIR}$$host_dir/js; \
+		if [ -d $$js_dir ]; then \
+			for js_lib in $$(ls $$js_dir); do \
+				lib_dir=$$js_dir/$$js_lib; \
+				if [ -d $$lib_dir ]; then \
+					if [ -f $$lib_dir/index.js ]; then \
+						mkdir -p $$js_dir; \
+						echo "watch javascript lib $lib_dir.js"; \
 						(${NODE_BIN}watchify \
-							${HOSTS_DIR}$$host_dir/js/$$js_lib/index.js \
-							-o ${HOSTS_OUT_DIR}$$host_dir/js/$$js_lib.js \
+							$$lib_dir/index.js \
+							-o $$lib_dir.js \
 							-t [ babelify --presets [ es2015 ] ] \
 						&); \
 					else \
-						for js_sub_lib in $$(ls ${HOSTS_DIR}$$host_dir/js/$$js_lib/); do \
-							if [ -d ${HOSTS_DIR}$$host_dir/js/$$js_lib ]; then \
-								if [ -f ${HOSTS_DIR}$$host_dir/js/$$js_lib/$$js_sub_lib/index.js ]; then \
-									mkdir -p ${HOSTS_OUT_DIR}$$host_dir/js/$$js_lib/; \
-									echo "watch javascript lib ${HOSTS_OUT_DIR}$$host_dir/js/$$js_lib/$$js_sub_lib.js"; \
+						for sub_lib in $$(ls $$lib_dir); do \
+							sub_dir=$$lib_dir/$$sub_lib; \
+							if [ -d $$lib_dir ]; then \
+								if [ -f $$sub_dir/index.js ]; then \
+									mkdir -p $$lib_dir; \
+									echo "watch javascript lib $$sub_dir.js"; \
 									(${NODE_BIN}watchify \
-										${HOSTS_DIR}$$host_dir/js/$$js_lib/$$js_sub_lib/index.js \
-										-o ${HOSTS_OUT_DIR}$$host_dir/js/$$js_lib/$$js_sub_lib.js \
+										$$sub_dir/index.js \
+										-o $$sub_dir.js \
 										-t [ babelify --presets [ es2015 ] ] \
 									&); \
 								fi; \
@@ -107,26 +107,26 @@ watch-js: build-create-host-dirs
 		fi; \
 	done;
 
-	@echo "watch-javascript ended"
+	@echo "watch-javascript started. stop with 'make watch-stop'"
 
 build-nginx: build-create-host-dirs
-	@echo "copy nginx config"; \
-	mkdir -p ./out/nginx/sites-enabled/; \
-	\
-	cp ./nginx/nginx.conf ./out/nginx/nginx.conf \
-	;
+	@echo "copy nginx config";
+	mkdir -p ./out/nginx/sites-enabled/;
+	cp ./nginx/nginx.conf ./out/nginx/nginx.conf;
 
 build-static: build-create-host-dirs build-nginx
-	mkdir -p ./out/hosts
+	mkdir -p ${HOSTS_OUT_DIR}
 	@for host_dir in $$(ls ${HOSTS_DIR}); do \
-		if [ -d ${HOSTS_DIR}$$host_dir/assets/ ]; then \
+		asset_dir=${HOSTS_DIR}$$host_dir/assets/; \
+		if [ -d $$asset_dir ]; then \
 			echo "copy assets directory to ${HOSTS_OUT_DIR}$$host_dir" && \
-			cp ${HOSTS_DIR}$$host_dir/assets/* ${HOSTS_OUT_DIR}$$host_dir/ -rf; \
+			cp $$asset_dir/* ${HOSTS_OUT_DIR}$$host_dir/ -rf; \
 		fi; \
 		\
+		nginx_out_dir=./out/nginx/sites-enabled/$$host_dir; \
 		echo "build nginx site config for $$host_dir" && \
-		cp ./nginx/sites-enabled/default ./out/nginx/sites-enabled/$$host_dir && \
-		sed -i -e s/HOSTNAME/$$host_dir/g ./out/nginx/sites-enabled/$$host_dir; \
+		cp ./nginx/sites-enabled/default $$nginx_out_dir && \
+		sed -i -e s/HOSTNAME/$$host_dir/g $$nginx_out_dir; \
 	done;
 
 # build html, css and js for every page in the hosts/ directory.
@@ -171,8 +171,9 @@ build: ; ${MAKE} -j 6 \
 				build-html \
 				build-static \
 				build-css \
-				build-javascript;
-	@echo "Build finished"
+				build-javascript \
+				;
+	@echo "Build finished";
 
 # build the docker container
 docker-build:
