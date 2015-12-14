@@ -6,7 +6,7 @@ server {
   index index.html;
 
   location / {
-    try_files /HOSTNAME$uri =404;
+    try_files /HOSTNAME$uri /HOSTNAME$uri.html /HOSTNAME$uri/index.html =404;
   }
   location = / {
     try_files /HOSTNAME/index.html =404;
