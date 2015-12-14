@@ -20,17 +20,22 @@ uninstall: clean
 
 build-create-host-dirs:
 	@for host_dir in $$(ls ${HOSTS_DIR}); do \
-		if [ -d ${HOSTS_DIR}$$host_dir ]; then \
-			mkdir ${HOSTS_OUT_DIR}$$host_dir -p; \
+		dir=${HOSTS_DIR}$$host_dir; \
+		echo "creating directory $$dir"; \
+		if [ -d $$dir ]; then \
+			mkdir $$dir -p; \
 		fi; \
 	done;
 
 build-javascript: build-create-host-dirs
 	@for host_dir in $$(ls ${HOSTS_DIR}); do \
-		if [ -d ${HOSTS_DIR}$$host_dir/js/ ]; then \
-			for js_lib in $$(ls ${HOSTS_DIR}$$host_dir/js); do \
-				if [ -d ${HOSTS_DIR}$$host_dir/js/$$js_lib ]; then \
-					if [ -f ${HOSTS_DIR}$$host_dir/js/$$js_lib/index.js ]; then \
+		js_dir=${HOSTS_DIR}$$host_dir/js; \
+		if [ -d $$js_dir/ ]; then \
+			for js_lib in $$(ls $$js_dir/); do \
+				lib_dir=$$js_dir/$$js_lib; \
+				if [ -d $$lib_dir ]; then \
+					if [ -f $$lib_dir/index.js ]; then \
+						out_dir=${HOSTS_OUT_DIR}$$host_dir/js/; \
 						mkdir -p ${HOSTS_OUT_DIR}$$host_dir/js/; \
 						echo "build javascript lib ${HOSTS_OUT_DIR}$$host_dir/js/$$js_lib.js"; \
 						${NODE_BIN}browserify \
@@ -57,8 +62,44 @@ build-javascript: build-create-host-dirs
 			done; \
 		fi; \
 	done;
-
 	@echo "build-javascript finished"
+
+
+
+watch-js: build-create-host-dirs
+	@for host_dir in $$(ls ${HOSTS_DIR}); do \
+		if [ -d ${HOSTS_DIR}$$host_dir/js/ ]; then \
+			for js_lib in $$(ls ${HOSTS_DIR}$$host_dir/js); do \
+				if [ -d ${HOSTS_DIR}$$host_dir/js/$$js_lib ]; then \
+					if [ -f ${HOSTS_DIR}$$host_dir/js/$$js_lib/index.js ]; then \
+						mkdir -p ${HOSTS_OUT_DIR}$$host_dir/js/; \
+						echo "watch javascript lib ${HOSTS_OUT_DIR}$$host_dir/js/$$js_lib.js"; \
+						(${NODE_BIN}watchify \
+							${HOSTS_DIR}$$host_dir/js/$$js_lib/index.js \
+							-o ${HOSTS_OUT_DIR}$$host_dir/js/$$js_lib.js \
+							-t [ babelify --presets [ es2015 ] ] \
+						&); \
+					else \
+						for js_sub_lib in $$(ls ${HOSTS_DIR}$$host_dir/js/$$js_lib/); do \
+							if [ -d ${HOSTS_DIR}$$host_dir/js/$$js_lib ]; then \
+								if [ -f ${HOSTS_DIR}$$host_dir/js/$$js_lib/$$js_sub_lib/index.js ]; then \
+									mkdir -p ${HOSTS_OUT_DIR}$$host_dir/js/$$js_lib/; \
+									echo "watch javascript lib ${HOSTS_OUT_DIR}$$host_dir/js/$$js_lib/$$js_sub_lib.js"; \
+									(${NODE_BIN}watchify \
+										${HOSTS_DIR}$$host_dir/js/$$js_lib/$$js_sub_lib/index.js \
+										-o ${HOSTS_OUT_DIR}$$host_dir/js/$$js_lib/$$js_sub_lib.js \
+										-t [ babelify --presets [ es2015 ] ] \
+									&); \
+								fi; \
+							fi; \
+						done; \
+					fi; \
+				fi; \
+			done; \
+		fi; \
+	done;
+
+	@echo "watch-javascript ended"
 
 build-nginx: build-create-host-dirs
 	@echo "copy nginx config"; \
@@ -156,11 +197,7 @@ rmImages:
 # main docker task, builds deps then runs the container
 docker: build docker-build docker-run
 
-watch-javascript:
-	@echo "start watching javascript"
-	@while inotifywait -r \
-		-e close_write ${HOSTS_DIR}**/js/; do make build-javascript; \
-	done;
+watch-javascript: ; @${MAKE} -j 10 watch-js;
 
 watch-static:
 	@echo "start watching static files"
@@ -186,5 +223,7 @@ watch: ; @${MAKE} -j4 \
 					watch-css \
 					watch-html;
 
+watch-stop:
+	pkill -f ./node_modules/.bin/watchify
 # server is the default task
 all: server
