@@ -124,9 +124,14 @@ build-static: build-create-host-dirs build-nginx
 		fi; \
 		\
 		nginx_out_dir=./out/nginx/sites-enabled/$$host_dir; \
-		echo "build nginx site config for $$host_dir" && \
-		cp ./nginx/sites-enabled/default $$nginx_out_dir && \
-		sed -i -e s/HOSTNAME/$$host_dir/g $$nginx_out_dir; \
+		echo "build nginx site config for $$host_dir"; \
+		cp ./nginx/sites-enabled/default $$nginx_out_dir; \
+		host_names=$$(cat ./hosts/$$host_dir/HOSTNAMES); \
+		sed -i \
+			-e s/ROOT_DIR/"$$host_dir"/g \
+			-e s/HOSTNAME/"$$host_names"/g \
+			$$nginx_out_dir \
+		; \
 	done;
 
 # build html, css and js for every page in the hosts/ directory.
@@ -166,7 +171,7 @@ build-css: build-create-host-dirs
 	done;
 
 # build html, css and js for every page in the hosts/ directory.
-build: ; ${MAKE} -j 6 \
+build: ; ${MAKE} -j 4 \
 				build-create-host-dirs \
 				build-html \
 				build-static \
@@ -176,7 +181,7 @@ build: ; ${MAKE} -j 6 \
 	@echo "Build finished";
 
 # build the docker container
-docker-build:
+docker-build: build
 	docker build -t magic-host .
 
 # run the dockerfile on port 80:80,
@@ -206,7 +211,7 @@ rmImages:
 # main docker task, builds deps then runs the container
 docker: build docker-build docker-run
 
-watch-javascript: ; @${MAKE} -j 10 watch-js;
+watch-javascript: watch-js;
 
 watch-static:
 	@echo "start watching static files"
@@ -236,9 +241,11 @@ watch-stop:
 	pkill -f ./node_modules/.bin/watchify
 
 git-check-hosts:
-	for host_dir in $$(ls ./hosts/); do \
-		echo "host dir $$host_dir"; \
-		git status $$host_dir; \
+	@for host_dir in $$(ls ./hosts/); do \
+		echo "checking host ./hosts/$$host_dir"; \
+		cd ./hosts/$$host_dir/ && \
+		git status && \
+		cd ../../; \
 	done;
 
 # server is the default task
