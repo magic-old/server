@@ -234,5 +234,12 @@ watch: ; @${MAKE} -j4 \
 
 watch-stop:
 	pkill -f ./node_modules/.bin/watchify
+
+git-check-hosts:
+	for host_dir in $$(ls ./hosts/); do \
+		echo "host dir $$host_dir"; \
+		git status $$host_dir; \
+	done;
+
 # server is the default task
 all: server
