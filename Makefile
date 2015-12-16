@@ -111,8 +111,24 @@ watch-js: build-create-host-dirs
 
 build-nginx: build-create-host-dirs
 	@echo "copy nginx config";
-	mkdir -p ./out/nginx/sites-enabled/;
-	cp ./nginx/nginx.conf ./out/nginx/nginx.conf;
+	@mkdir -p ./out/nginx/sites-enabled/;
+	@cp ./nginx/nginx.conf ./out/nginx/nginx.conf;
+	@for host_dir in $$(ls ${HOSTS_DIR}); do \
+		nginx_out_dir=./out/nginx/sites-enabled/$$host_dir; \
+		echo "build nginx site config for $$host_dir"; \
+		cp ./nginx/sites-enabled/default $$nginx_out_dir; \
+		host_names=$$(cat ./hosts/$$host_dir/HOSTNAMES); \
+		account_thumbprint=$$(${LETSENCRYPT_SH} thumbprint -a ${LETSENCRYPT_KEY}); \
+		echo "host $$host"; \
+		echo $$account_thumbprint; \
+		sed -i \
+			-e s/ROOT_DIR/"$$host_dir"/g \
+			-e s/HOSTNAME/"$$host_names"/g \
+			-e s/ACCOUNT_THUMBPRINT/"$$account_thumbprint"/g \
+			-e s/"account thumbprint: "/""/g \
+			$$nginx_out_dir \
+		; \
+	done;
 
 build-static: build-create-host-dirs build-nginx
 	mkdir -p ${HOSTS_OUT_DIR}
@@ -122,17 +138,7 @@ build-static: build-create-host-dirs build-nginx
 			echo "copy assets directory to ${HOSTS_OUT_DIR}$$host_dir" && \
 			cp $$asset_dir/* ${HOSTS_OUT_DIR}$$host_dir/ -rf; \
 		fi; \
-		\
-		nginx_out_dir=./out/nginx/sites-enabled/$$host_dir; \
-		echo "build nginx site config for $$host_dir"; \
-		cp ./nginx/sites-enabled/default $$nginx_out_dir; \
-		host_names=$$(cat ./hosts/$$host_dir/HOSTNAMES); \
-		sed -i \
-			-e s/ROOT_DIR/"$$host_dir"/g \
-			-e s/HOSTNAME/"$$host_names"/g \
-			$$nginx_out_dir \
-		; \
-	done;
+	done; \
 
 # build html, css and js for every page in the hosts/ directory.
 build-html: build-create-host-dirs
