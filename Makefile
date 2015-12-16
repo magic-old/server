@@ -3,6 +3,9 @@
 NODE_BIN = "./node_modules/.bin/"
 HOSTS_OUT_DIR = "./out/hosts/"
 HOSTS_DIR = "./hosts/"
+LETSENCRYPT_DIR = "./.bin/letsencrypt/"
+LETSENCRYPT_SH = "${LETSENCRYPT_DIR}letsencrypt.sh"
+LETSENCRYPT_KEY = "./.bin/letsencrypt.key"
 
 # remove dist files
 clean:
@@ -253,6 +256,31 @@ git-check-hosts:
 		git status && \
 		cd ../../; \
 	done;
+
+letsencrypt-install:
+	@git clone https://github.com/magic/letsencrypt.sh ${LETSENCRYPT_DIR};
+
+letsencrypt-key:
+	@mkdir -p ${LETSENCRYPT_DIR};
+	@openssl genrsa -out ${LETSENCRYPT_KEY} 4096
+	@echo "generated letsencrypt-key"
+
+letsencrypt-register:
+	${LETSENCRYPT_SH} register -a ${LETSENCRYPT_KEY} -e jascha@jaeh.at
+
+letsencrypt-generate-nginx-config:
+	@mkdir -p ${LETSENCRYPT_DIR};
+	@echo $$(${LETSENCRYPT_SH} thumbprint -a ${LETSENCRYPT_KEY});
+
+#letsencrypt-sign:
+#	${LETSENCRYPT_SH} \
+#	sign \
+#	-a account.key \
+#	-k server.key \
+#	-c server.pem \
+#	www.example.org \
+#	www1.example.org \
+#	example.org
 
 # server is the default task
 all: server
