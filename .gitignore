@@ -2,3 +2,5 @@ out
 node_modules
 hosts/*
 !hosts/.gitkeep
+.bin
+letsencrypt.key
