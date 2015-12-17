@@ -9,7 +9,7 @@ LETSENCRYPT_KEY = "./.bin/letsencrypt.key"
 
 # remove dist files
 clean:
-	rm out -rf
+	rm out -rf;
 
 # install npm dependencies
 install:
@@ -190,7 +190,7 @@ build: ; ${MAKE} -j 4 \
 	@echo "Build finished";
 
 # build the docker container
-docker-build: build
+docker-build:
 	docker build -t magic-host .
 
 # run the dockerfile on port 80:80,
@@ -271,16 +271,6 @@ letsencrypt-register:
 letsencrypt-generate-nginx-config:
 	@mkdir -p ${LETSENCRYPT_DIR};
 	@echo $$(${LETSENCRYPT_SH} thumbprint -a ${LETSENCRYPT_KEY});
-
-#letsencrypt-sign:
-#	${LETSENCRYPT_SH} \
-#	sign \
-#	-a account.key \
-#	-k server.key \
-#	-c server.pem \
-#	www.example.org \
-#	www1.example.org \
-#	example.org
 
 # server is the default task
 all: server
