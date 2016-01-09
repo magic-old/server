@@ -3,43 +3,43 @@
 # Powered by Magic
 ############################################################
 
-# Set the base image to Ubuntu
-FROM ubuntu
+FROM alpine:3.3
 
-# File Author / Maintainer
-MAINTAINER Jascha Ehrenreich <jascha@jaeh.at>
+ENV NGINX_VERSION nginx-1.7.11
 
-RUN apt-get install software-properties-common -y
+RUN apk --update add openssl-dev pcre-dev zlib-dev wget build-base inotify-tools && \
+    mkdir -p /tmp/src && \
+    cd /tmp/src && \
+    wget http://nginx.org/download/${NGINX_VERSION}.tar.gz && \
+    tar -zxvf ${NGINX_VERSION}.tar.gz && \
+    cd /tmp/src/${NGINX_VERSION} && \
+    ./configure \
+        --with-http_ssl_module \
+        --with-http_gzip_static_module \
+        --prefix=/etc/nginx \
+        --http-log-path=/var/log/nginx/access.log \
+        --error-log-path=/var/log/nginx/error.log \
+        --sbin-path=/usr/local/sbin/nginx && \
+    make && \
+    make install && \
+    apk del build-base && \
+    rm -rf /tmp/src && \
+    rm -rf /var/cache/apk/*
 
-# Install Nginx.
-RUN \
-  add-apt-repository -y ppa:nginx/stable && \
-  apt-get update && \
-  apt-get install -y nginx && \
-  rm -rf /var/lib/apt/lists/* && \
-  chown -R www-data:www-data /var/lib/nginx
+# forward request and error logs to docker log collector
+RUN ln -sf /dev/stdout /var/log/nginx/access.log \
+    && ln -sf /dev/stderr /var/log/nginx/error.log
 
-# We are powered by Magic
-RUN sed -i \
-  -e 's/nginx\/.....\r/magic\/2.3.5\r/' \
-  -e 's/nginx\r/magic\r/' \
-  `which nginx`
+VOLUME ["/var/log/nginx", "/var/cache/nginx"]
 
 # Remove the default Nginx configuration file
-RUN rm -v /etc/nginx/nginx.conf
+RUN rm -rf /etc/nginx/conf/*
 
 # Copy the config
-ADD out/nginx/nginx.conf /etc/nginx/
+ADD out/nginx/* /etc/nginx/conf/
 
-RUN rm /etc/nginx/sites-enabled/*
+WORKDIR /etc/nginx
 
-ADD out/nginx/sites-enabled/* /etc/nginx/sites-enabled/
-
-# Expose ports
 EXPOSE 80 443
 
-RUN nginx -t
-
-# Set the default command to execute
-# when creating a new container
-CMD service nginx start
+CMD ["nginx"]
