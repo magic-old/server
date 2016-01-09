@@ -7,6 +7,9 @@ LETSENCRYPT_DIR = "./.bin/letsencrypt/"
 LETSENCRYPT_SH = "${LETSENCRYPT_DIR}letsencrypt.sh"
 LETSENCRYPT_KEY = "./.bin/letsencrypt.key"
 
+# default task
+all: build docker-build docker-run
+
 # remove dist files
 clean:
 	rm out -rf;
@@ -272,5 +275,3 @@ letsencrypt-generate-nginx-config:
 	@mkdir -p ${LETSENCRYPT_DIR};
 	@echo $$(${LETSENCRYPT_SH} thumbprint -a ${LETSENCRYPT_KEY});
 
-# server is the default task
-all: server
