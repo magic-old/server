@@ -40,6 +40,7 @@ build-javascript: build-create-host-dirs
 			for lib in $$(ls $$dir/); do \
 				lib_dir=$$dir/$$lib; \
 				out_dir=${HOSTS_OUT_DIR}$$host_dir/js; \
+				echo "test lib_dir $$lib_dir"; \
 				if [ -d $$lib_dir ]; then \
 					lib_file=$$lib_dir/index.js; \
 					if [ -f $$lib_file ]; then \
@@ -75,8 +76,6 @@ build-javascript: build-create-host-dirs
 	done;
 	@echo "build-javascript finished"
 
-
-
 watch-js: build-create-host-dirs
 	@for host_dir in $$(ls ${HOSTS_DIR}); do \
 		js_dir=${HOSTS_DIR}$$host_dir/js; \
@@ -86,7 +85,7 @@ watch-js: build-create-host-dirs
 				if [ -d $$lib_dir ]; then \
 					if [ -f $$lib_dir/index.js ]; then \
 						mkdir -p $$js_dir; \
-						echo "watch javascript lib $lib_dir.js"; \
+						echo "watch javascript lib $$lib_dir.js"; \
 						(${NODE_BIN}watchify \
 							$$lib_dir/index.js \
 							-o $$lib_dir.js \
@@ -119,6 +118,7 @@ build-nginx: build-create-host-dirs
 	@echo "copy nginx config";
 	@mkdir -p ./out/nginx/sites-enabled/;
 	@cp ./nginx/nginx.conf ./out/nginx/nginx.conf;
+	@cp ./nginx/mime.types ./out/nginx/mime.types;
 	@for host_dir in $$(ls ${HOSTS_DIR}); do \
 		nginx_out_dir=./out/nginx/sites-enabled/$$host_dir; \
 		echo "build nginx site config for $$host_dir"; \
@@ -198,7 +198,7 @@ docker-build:
 
 # run the dockerfile on port 80:80,
 # --rm removes the container on exit
-docker-run:
+docker-run: docker-rm
 	docker run \
 	--name magic-server \
 	 -p 80:80 \
@@ -207,6 +207,10 @@ docker-run:
 	 -v $(PWD)/out/hosts:/www/data \
 	magic-host \
 	;
+
+docker-rm:
+	echo 'deleting container'
+	@docker rm -f magic-server || echo 'container does not exist'
 
 # removes ALL docker containers
 rmContainers:
