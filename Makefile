@@ -247,11 +247,12 @@ watch-html:
 		-e close_write ${HOSTS_DIR}**/html/; do make build-html; \
 	done;
 
-watch: ; @${MAKE} -j4 \
-					watch-javascript \
-					watch-static \
-					watch-css \
-					watch-html;
+watch: build
+	@${MAKE} -j4 \
+		watch-javascript \
+		watch-static \
+		watch-css \
+		watch-html;
 
 watch-stop:
 	pkill -f ./node_modules/.bin/watchify
